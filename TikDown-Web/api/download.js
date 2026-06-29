@@ -66,7 +66,7 @@ async function getTikTok(url, apiKey) {
     const awemeId = match[1];
 
     const response = await fetch(
-        `https://${host}/video-without-watermark?compact=0&aweme_id=${awemeId}`,
+        `https://${host}/video-without-watermark?compact=1&aweme_id=${awemeId}`,
         {
             headers: {
                 'Content-Type': 'application/json',
@@ -75,6 +75,8 @@ async function getTikTok(url, apiKey) {
             }
         }
     );
+
+    console.log('TikTok full keys:', Object.keys(data));
 
     const data = await response.json();
     console.log('TikTok ScrapTik response:', JSON.stringify(data).slice(0, 300));
