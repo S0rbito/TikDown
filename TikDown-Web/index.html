@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SocialDownloader — Descarga sin marca de agua</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0A0A0A;
+            --surface: #141414;
+            --surface2: #1E1E1E;
+            --border: #2A2A2A;
+            --text: #F0F0F0;
+            --text-secondary: #888;
+            --red: #FE2C55;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 16px 60px;
+        }
+
+        /* ── Header ── */
+        header {
+            text-align: center;
+            padding: 56px 0 40px;
+        }
+        .logo {
+            font-size: 2.2rem;
+            font-weight: 700;
+            letter-spacing: -0.04em;
+            color: var(--red);
+        }
+        .logo span { color: var(--text); }
+        header p {
+            color: var(--text-secondary);
+            margin-top: 8px;
+            font-size: 0.95rem;
+        }
+
+        /* ── Plataformas soportadas ── */
+        .platforms {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+        .platform-pill {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        /* ── Search box ── */
+        .main-container { width: 100%; max-width: 620px; }
+
+        .search-box {
+            display: flex;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+        .search-box:focus-within { border-color: var(--red); }
+
+        .search-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 16px 18px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+        }
+        .search-box input::placeholder { color: var(--text-secondary); }
+
+        .search-box button {
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 0 24px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: opacity 0.15s;
+            white-space: nowrap;
+        }
+        .search-box button:hover { opacity: 0.85; }
+        .search-box button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ── Download container ── */
+        #download-container { margin-top: 24px; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-secondary);
+        }
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 3px solid var(--border);
+            border-top-color: var(--red);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .error-msg {
+            background: #1a0a0a;
+            border: 1px solid #3a1515;
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: #f87171;
+            font-size: 0.9rem;
+        }
+
+        /* ── Video card ── */
+        .video-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+        .platform-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: white;
+            border-radius: 0 0 10px 0;
+        }
+
+        .card-body {
+            display: flex;
+            gap: 16px;
+            padding: 16px;
+        }
+
+        .video-thumb {
+            width: 90px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: var(--surface2);
+            flex-shrink: 0;
+        }
+        .video-thumb-placeholder {
+            width: 90px;
+            height: 120px;
+            background: var(--surface2);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .video-info {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            flex: 1;
+            min-width: 0;
+        }
+        .video-title {
+            font-size: 0.9rem;
+            line-height: 1.4;
+            color: var(--text);
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .video-author {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        .download-btn {
+            display: block;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 12px;
+            transition: opacity 0.15s;
+        }
+        .download-btn:hover { opacity: 0.85; }
+
+        /* ── Historial ── */
+        #history-section {
+            margin-top: 40px;
+            display: none;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+        .history-header h3 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+        .clear-btn {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: border-color 0.15s;
+        }
+        .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.15s;
+        }
+        .history-item:hover { border-color: #444; }
+
+        .history-thumb {
+            width: 44px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            flex-shrink: 0;
+            background: var(--surface2);
+        }
+        .history-thumb-placeholder {
+            width: 44px;
+            height: 60px;
+            background: var(--surface2);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .history-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .history-platform {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .history-title {
+            font-size: 0.82rem;
+            color: var(--text);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .history-date {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            margin-top: 2px;
+            display: block;
+        }
+        .history-dl {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 1rem;
+            flex-shrink: 0;
+            transition: opacity 0.15s;
+        }
+        .history-dl:hover { opacity: 0.8; }
+
+        /* ── Footer ── */
+        footer {
+            margin-top: 60px;
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            text-align: center;
+        }
+
+        @media (max-width: 480px) {
+            .logo { font-size: 1.8rem; }
+            .search-box button { padding: 0 16px; font-size: 0.85rem; }
+            .card-body { gap: 12px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="main-container">
+        <header>
+            <div class="logo">Social<span>Downloader</span></div>
+            <p>Descarga videos sin marca de agua al instante</p>
+        </header>
+
+        <div class="platforms">
+            <span class="platform-pill">🎵 TikTok</span>
+            <span class="platform-pill">📘 Facebook</span>
+            <span class="platform-pill">🕊️ Twitter/X</span>
+            <span class="platform-pill">📸 Instagram</span>
+        </div>
+
+        <div class="search-box">
+            <input type="text" id="url-input" placeholder="Pega el link del video aquí...">
+            <button id="search-btn" onclick="procesarDescarga()">Descargar</button>
+        </div>
+
+        <div id="download-container"></div>
+
+        <section id="history-section">
+            <div class="history-header">
+                <h3>Descargas recientes</h3>
+                <button class="clear-btn" onclick="clearHistory()">Limpiar</button>
+            </div>
+            <div id="history-list"></div>
+        </section>
+    </div>
+
+    <footer>
+        Solo para uso personal · SocialDownloader
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
