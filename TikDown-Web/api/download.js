@@ -42,47 +42,42 @@ function detectPlatform(url) {
 
 // ── TikTok ────────────────────────────────────────────────────────────────────
 async function getTikTok(url, apiKey) {
-    const host = 'tiktok-downloader-download-tiktok-videos-without-watermark.p.rapidapi.com';
+    const host = 'scraptik.p.rapidapi.com';
+
+    // Extrae el aweme_id de la URL
+    // Formatos: /video/1234567890 o /@user/video/1234567890
+    const match = url.match(/\/video\/(\d+)/);
+    if (!match) throw new Error('No se pudo extraer el ID del video de TikTok');
+    const awemeId = match[1];
+
     const response = await fetch(
-        `https://${host}/index?url=${encodeURIComponent(url)}`,
+        `https://${host}/video-without-watermark?compact=0&aweme_id=${awemeId}`,
         {
             headers: {
+                'Content-Type': 'application/json',
                 'x-rapidapi-key': apiKey,
                 'x-rapidapi-host': host
-            },
-            redirect: 'manual'  // evita el loop de redirects
+            }
         }
     );
 
     const data = await response.json();
-    console.log('TikTok response:', JSON.stringify(data).slice(0, 300));
+    console.log('TikTok ScrapTik response:', JSON.stringify(data).slice(0, 300));
 
     if (data.message) throw new Error(`Error API: ${data.message}`);
 
-    let videoUrl = '';
-    if (Array.isArray(data.video) && data.video.length > 0) {
-        // El último suele ser el de mayor calidad
-        videoUrl = data.video[data.video.length - 1];
-    } else {
-        videoUrl = data.video || '';
-    }
-
-    
-    const coverArr = Array.isArray(data.cover) ? data.cover : [data.cover];
-    const dynamicCover = Array.isArray(data.dynamic_cover) ? data.dynamic_cover[0] : data.dynamic_cover;
-    const thumbnail = coverArr.find(u => u && (u.includes('.jpg') || u.includes('.jpeg') || u.includes('.png') || u.includes('.webp')))
-        || dynamicCover
-    || coverArr[0]
-    || null;
-
+    const videoUrl = data.video_url || '';
     if (!videoUrl) throw new Error('No se encontró el video de TikTok');
+
+    // Thumbnail desde el campo cover si existe
+    const thumbnail = data.cover || data.origin_cover || null;
 
     return {
         platform: 'tiktok',
-        title: Array.isArray(data.description) ? data.description[0] : (data.description || 'Video de TikTok'),
-        thumbnail: thumbnail || null,
+        title: data.desc || data.title || 'Video de TikTok',
+        thumbnail,
         downloadUrl: videoUrl,
-        author: Array.isArray(data.author) ? data.author[0] : (data.author || '')
+        author: data.author?.unique_id || data.author?.nickname || ''
     };
 }
 
