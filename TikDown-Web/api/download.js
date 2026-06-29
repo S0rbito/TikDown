@@ -59,13 +59,15 @@ async function getTikTok(url, apiKey) {
 
     if (data.message) throw new Error(`Error API: ${data.message}`);
 
-    const videoUrl = Array.isArray(data.video) ? data.video[0] : data.video;let videoUrl = '';
+    let videoUrl = '';
     if (Array.isArray(data.video) && data.video.length > 0) {
         // El último suele ser el de mayor calidad
         videoUrl = data.video[data.video.length - 1];
     } else {
         videoUrl = data.video || '';
     }
+
+    
     const coverArr = Array.isArray(data.cover) ? data.cover : [data.cover];
     const dynamicCover = Array.isArray(data.dynamic_cover) ? data.dynamic_cover[0] : data.dynamic_cover;
     const thumbnail = coverArr.find(u => u && (u.includes('.jpg') || u.includes('.jpeg') || u.includes('.png') || u.includes('.webp')))
