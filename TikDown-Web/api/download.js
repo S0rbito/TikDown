@@ -5,7 +5,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Falta el parámetro URL' });
     }
 
-    const apiKey = process.env.RAPIDAPI_KEY || "e0b8342780msh9ff7353dac626b2p16ee13jsn9a5c695c8f0e";
+    const apiKey = process.env.RAPIDAPI_KEY;
 
     const platform = detectPlatform(url);
 
