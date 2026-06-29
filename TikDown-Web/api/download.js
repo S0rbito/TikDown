@@ -43,11 +43,26 @@ function detectPlatform(url) {
 // ── TikTok ────────────────────────────────────────────────────────────────────
 async function getTikTok(url, apiKey) {
     const host = 'scraptik.p.rapidapi.com';
-
+    
+    // Resuelve links cortos (vt.tiktok.com, vm.tiktok.com)
+    let resolvedUrl = url;
+    if (url.includes('vt.tiktok.com') || url.includes('vm.tiktok.com')) {
+        try {
+            const res = await fetch(url, {
+                method: 'HEAD',
+                redirect: 'follow',
+                headers: { 'User-Agent': 'Mozilla/5.0' }
+            });
+            resolvedUrl = res.url;
+            console.log('TikTok resolved URL:', resolvedUrl);
+        } catch (e) {
+            console.log('No se pudo resolver el link corto:', e.message);
+        }
+    }
     // Extrae el aweme_id de la URL
     // Formatos: /video/1234567890 o /@user/video/1234567890
-    const match = url.match(/\/video\/(\d+)/);
-    if (!match) throw new Error('No se pudo extraer el ID del video de TikTok');
+    const match = resolvedUrl.match(/\/video\/(\d+)/);
+    if (!match) throw new Error('No se pudo extraer el ID. Usa el link completo del video desde TikTok.');
     const awemeId = match[1];
 
     const response = await fetch(
