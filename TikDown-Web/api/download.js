@@ -83,15 +83,21 @@ async function getTikTok(url, apiKey) {
     const video = detail.video;
 
     // Construye lista de calidades desde bit_rate, ordenadas de mayor a menor
-    const qualities = (video.bit_rate || [])
-        .map(b => ({
-            label: b.gear_name?.replace(/_/g, ' ') || 'Calidad',
-            url: b.play_addr?.url_list?.[0] || '',
-            sizeBytes: b.play_addr?.data_size || 0,
-            hasWatermark: false
-        }))
-        .filter(q => q.url)
-        .sort((a, b) => b.sizeBytes - a.sizeBytes);
+    const rawQualities = (video.bit_rate || [])
+    .map(b => ({
+        url: b.play_addr?.url_list?.[0] || '',
+        sizeBytes: b.play_addr?.data_size || 0,
+        hasWatermark: false
+    }))
+    .filter(q => q.url)
+    .sort((a, b) => b.sizeBytes - a.sizeBytes);
+
+    // Asigna etiquetas amigables según la posición (mayor a menor tamaño)
+    const friendlyLabels = ['Alta calidad', 'Buena calidad', 'Calidad media', 'Calidad estándar', 'Calidad reducida', 'Baja calidad', 'Muy baja calidad'];
+    const qualities = rawQualities.map((q, i) => ({
+        ...q,
+        label: friendlyLabels[i] || `Opción ${i + 1}`
+    }));
 
     // Agrega la versión sin marca de agua si existe
     if (video.download_no_watermark_addr?.url_list?.[0]) {
