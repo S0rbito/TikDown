@@ -21,7 +21,7 @@ export default async function handler(req, res) {
         } else if (platform === 'twitter') {
             result = await getTwitter(url, apiKey);
         } else {
-            return res.status(400).json({ error: 'Plataforma no soportada. Usa TikTok, Facebook o Instagram.' });
+            return res.status(400).json({ error: 'Plataforma no soportada. Usa TikTok, Facebook, Instagram o Twitter/X.' });
         }
 
         return res.status(200).json(result);
@@ -75,6 +75,8 @@ async function getTikTok(url, apiKey) {
     );
 
     const data = await response.json();
+    console.log('TikTok get-post status_code:', data.status_code);
+
     const detail = data.aweme_detail;
     if (!detail) throw new Error('No se encontró el video');
 
@@ -91,7 +93,7 @@ async function getTikTok(url, apiKey) {
         .filter(q => q.url)
         .sort((a, b) => b.sizeBytes - a.sizeBytes);
 
-    // Agrega la versión sin marca de agua si existe (suele ser distinta a bit_rate)
+    // Agrega la versión sin marca de agua si existe
     if (video.download_no_watermark_addr?.url_list?.[0]) {
         qualities.unshift({
             label: 'Sin marca de agua (HD)',
@@ -108,74 +110,8 @@ async function getTikTok(url, apiKey) {
         title: detail.desc || 'Video de TikTok',
         thumbnail: video.cover?.url_list?.[0] || video.origin_cover?.url_list?.[0] || null,
         author: detail.author?.unique_id || detail.author?.nickname || '',
-        downloadUrl: qualities[0].url, // mejor calidad por defecto
-        qualities // array completo para mostrar opciones
-    };
-}
-
-
-
-    const data = await response.json();
-    const detail = data.aweme_detail;
-    if (!detail) throw new Error('No se encontró el video');
-
-    const video = detail.video;
-
-    // Construye lista de calidades desde bit_rate, ordenadas de mayor a menor
-    const qualities = (video.bit_rate || [])
-        .map(b => ({
-            label: b.gear_name?.replace(/_/g, ' ') || 'Calidad',
-            url: b.play_addr?.url_list?.[0] || '',
-            sizeBytes: b.play_addr?.data_size || 0,
-            hasWatermark: false
-        }))
-        .filter(q => q.url)
-        .sort((a, b) => b.sizeBytes - a.sizeBytes);
-
-    // Agrega la versión sin marca de agua si existe (suele ser distinta a bit_rate)
-    if (video.download_no_watermark_addr?.url_list?.[0]) {
-        qualities.unshift({
-            label: 'Sin marca de agua (HD)',
-            url: video.download_no_watermark_addr.url_list[0],
-            sizeBytes: video.download_no_watermark_addr.data_size || 0,
-            hasWatermark: false
-        });
-    }
-
-    if (qualities.length === 0) throw new Error('No se encontraron calidades de video');
-
-    return {
-        platform: 'tiktok',
-        title: detail.desc || 'Video de TikTok',
-        thumbnail: video.cover?.url_list?.[0] || video.origin_cover?.url_list?.[0] || null,
-        author: detail.author?.unique_id || detail.author?.nickname || '',
-        downloadUrl: qualities[0].url, // mejor calidad por defecto
-        qualities // array completo para mostrar opciones
-    };
-}
-
-    //LOGS DE RESPUESTA DE TIKTOK
-    const data = await response.json();
-    console.log('TikTok ALL keys:', JSON.stringify(Object.keys(data)));
-    console.log('TikTok bit_rate:', JSON.stringify(data.bit_rate)?.slice(0, 500));
-    console.log('TikTok play_addr:', JSON.stringify(data.play_addr)?.slice(0, 300));
-    console.log('TikTok music:', JSON.stringify(data.music)?.slice(0, 300));
-    console.log('TikTok ScrapTik response:', JSON.stringify(data).slice(0, 300));
-
-    if (data.message) throw new Error(`Error API: ${data.message}`);
-
-    const videoUrl = data.video_url || '';
-    if (!videoUrl) throw new Error('No se encontró el video de TikTok');
-
-    // Thumbnail desde el campo cover si existe
-    const thumbnail = data.cover || data.origin_cover || null;
-
-    return {
-        platform: 'tiktok',
-        title: data.desc || data.title || 'Video de TikTok',
-        thumbnail,
-        downloadUrl: videoUrl,
-        author: data.author?.unique_id || data.author?.nickname || ''
+        downloadUrl: qualities[0].url,
+        qualities
     };
 }
 
@@ -209,10 +145,10 @@ async function getFacebook(url, apiKey) {
         title: data.video_info?.title || 'Video de Facebook',
         thumbnail: data.video_info?.thumbnail || null,
         downloadUrl: videoUrl,
-        author: ''
+        author: '',
+        qualities: [{ label: 'Original', url: videoUrl, sizeBytes: 0, hasWatermark: false }]
     };
 }
-
 
 // ── Twitter/X ─────────────────────────────────────────────────────────────────
 async function getTwitter(url, apiKey) {
@@ -233,10 +169,20 @@ async function getTwitter(url, apiKey) {
 
     if (data.error) throw new Error('No se pudo obtener el video de Twitter/X');
 
-    // Toma el video de mayor calidad (mayor bitrate)
-    const videos = data.videos?.[0]?.formats?.filter(f => f.container === 'mp4') || [];
-    const best = videos.reduce((a, b) => (b.bitrate > a.bitrate ? b : a), videos[0] || {});
-    const videoUrl = best?.url || data.videos?.[0]?.url || '';
+    const allFormats = (data.videos?.[0]?.formats || []).filter(f => f.container === 'mp4');
+
+    const qualities = allFormats
+        .map(f => ({
+            label: f.resolution || `${f.bitrate || ''} bps`,
+            url: f.url,
+            sizeBytes: 0,
+            hasWatermark: false
+        }))
+        .sort((a, b) => (b.label > a.label ? 1 : -1));
+
+    const videoUrl = allFormats.length > 0
+        ? allFormats.reduce((a, b) => (b.bitrate > a.bitrate ? b : a), allFormats[0]).url
+        : (data.videos?.[0]?.url || '');
 
     if (!videoUrl) throw new Error('No se encontró el video');
 
@@ -245,10 +191,12 @@ async function getTwitter(url, apiKey) {
         title: data.title || 'Video de Twitter/X',
         thumbnail: data.thumbnail || null,
         downloadUrl: videoUrl,
-        author: data.author || ''
+        author: data.author || '',
+        qualities: qualities.length > 0
+            ? qualities
+            : [{ label: 'Original', url: videoUrl, sizeBytes: 0, hasWatermark: false }]
     };
 }
-
 
 // ── Instagram ─────────────────────────────────────────────────────────────────
 async function getInstagram(url, apiKey) {
@@ -278,6 +226,7 @@ async function getInstagram(url, apiKey) {
         title: data.title || data.captions?.[0] || 'Video de Instagram',
         thumbnail: data.thumbnail_src || data.src || null,
         downloadUrl: videoUrl,
-        author: data.author || ''
+        author: data.author || '',
+        qualities: [{ label: 'Original', url: videoUrl, sizeBytes: 0, hasWatermark: false }]
     };
 }
