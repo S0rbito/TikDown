@@ -64,6 +64,61 @@
             color: var(--text-secondary);
         }
 
+        /* Contenedor principal para centrar todo */
+        .search-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px; /* Espacio entre el cuadro de texto y el botón de abajo */
+            width: 100%;
+            max-width: 600px; /* Ajusta esto según el ancho que ya tenías */
+            margin: 0 auto;
+        }
+
+        /* ── Nuevo botón de descarga suelto ── */
+        .download-action {
+            display: flex;
+            justify-content: center;
+            margin-top: 16px;
+        }
+
+        .download-action #search-btn {
+            background: transparent;
+            color: var(--red);
+            border: 2px solid var(--red);
+            border-radius: 12px;
+            padding: 10px 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .download-action #search-btn:hover {
+            background: var(--red);
+            color: white;
+        }
+
+        .download-action #search-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: transparent;
+        }
+
+        .input-group {
+            display: flex;
+            width: 100%;
+        }
+
+        .input-group input {
+            flex-grow: 1;
+            /* Aquí mantienes los colores oscuros y bordes redondeados que ya tenías */
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+
         /* ── Search box ── */
         .main-container { width: 100%; max-width: 620px; }
 
@@ -76,6 +131,8 @@
             transition: border-color 0.2s;
         }
         .search-box:focus-within { border-color: var(--red); }
+
+        
 
         .search-box input {
             flex: 1;
@@ -131,6 +188,7 @@
             color: #f87171;
             font-size: 0.9rem;
         }
+        
 
         /* CALIDADES */
         .quality-buttons {
@@ -355,8 +413,14 @@
 
         <div class="search-box">
             <input type="text" id="url-input" placeholder="Pega el link del video aquí...">
+            <button id="paste-btn" type="button">Pegar</button>
+        </div>
+
+        <div class="download-action">
             <button id="search-btn" onclick="procesarDescarga()">Descargar</button>
         </div>
+
+        
 
         <div id="download-container"></div>
 
