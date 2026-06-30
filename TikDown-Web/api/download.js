@@ -113,6 +113,47 @@ async function getTikTok(url, apiKey) {
     };
 }
 
+
+
+    const data = await response.json();
+    const detail = data.aweme_detail;
+    if (!detail) throw new Error('No se encontró el video');
+
+    const video = detail.video;
+
+    // Construye lista de calidades desde bit_rate, ordenadas de mayor a menor
+    const qualities = (video.bit_rate || [])
+        .map(b => ({
+            label: b.gear_name?.replace(/_/g, ' ') || 'Calidad',
+            url: b.play_addr?.url_list?.[0] || '',
+            sizeBytes: b.play_addr?.data_size || 0,
+            hasWatermark: false
+        }))
+        .filter(q => q.url)
+        .sort((a, b) => b.sizeBytes - a.sizeBytes);
+
+    // Agrega la versión sin marca de agua si existe (suele ser distinta a bit_rate)
+    if (video.download_no_watermark_addr?.url_list?.[0]) {
+        qualities.unshift({
+            label: 'Sin marca de agua (HD)',
+            url: video.download_no_watermark_addr.url_list[0],
+            sizeBytes: video.download_no_watermark_addr.data_size || 0,
+            hasWatermark: false
+        });
+    }
+
+    if (qualities.length === 0) throw new Error('No se encontraron calidades de video');
+
+    return {
+        platform: 'tiktok',
+        title: detail.desc || 'Video de TikTok',
+        thumbnail: video.cover?.url_list?.[0] || video.origin_cover?.url_list?.[0] || null,
+        author: detail.author?.unique_id || detail.author?.nickname || '',
+        downloadUrl: qualities[0].url, // mejor calidad por defecto
+        qualities // array completo para mostrar opciones
+    };
+}
+
     //LOGS DE RESPUESTA DE TIKTOK
     const data = await response.json();
     console.log('TikTok ALL keys:', JSON.stringify(Object.keys(data)));
