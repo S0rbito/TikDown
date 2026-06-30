@@ -189,6 +189,27 @@ function loadFromHistory(index) {
     }
 }
 
+async function descargarDirecto(videoUrl, filename) {
+    try {
+        const response = await fetch(videoUrl);
+        if (!response.ok) throw new Error('Error de red');
+
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
+
+    } catch (err) {
+        console.log('Fetch directo falló, abriendo en nueva pestaña:', err.message);
+        window.open(videoUrl, '_blank');
+    }
+}
+
 // Permite presionar Enter en el input
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('url-input').addEventListener('keydown', (e) => {
