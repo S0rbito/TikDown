@@ -77,6 +77,11 @@ async function getTikTok(url, apiKey) {
     );
 
     const data = await response.json();
+    
+    console.log('TikTok ALL keys:', JSON.stringify(Object.keys(data)));
+    console.log('TikTok bit_rate:', JSON.stringify(data.bit_rate)?.slice(0, 500));
+    console.log('TikTok play_addr:', JSON.stringify(data.play_addr)?.slice(0, 300));
+    console.log('TikTok music:', JSON.stringify(data.music)?.slice(0, 300));
     console.log('TikTok ScrapTik response:', JSON.stringify(data).slice(0, 300));
 
     if (data.message) throw new Error(`Error API: ${data.message}`);
