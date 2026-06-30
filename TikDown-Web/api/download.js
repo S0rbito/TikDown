@@ -43,7 +43,7 @@ function detectPlatform(url) {
 // ── TikTok ────────────────────────────────────────────────────────────────────
 async function getTikTok(url, apiKey) {
     const host = 'scraptik.p.rapidapi.com';
-    
+
     // Resuelve links cortos (vt.tiktok.com, vm.tiktok.com)
     let resolvedUrl = url;
     if (url.includes('vt.tiktok.com') || url.includes('vm.tiktok.com')) {
@@ -54,19 +54,17 @@ async function getTikTok(url, apiKey) {
                 headers: { 'User-Agent': 'Mozilla/5.0' }
             });
             resolvedUrl = res.url;
-            console.log('TikTok resolved URL:', resolvedUrl);
         } catch (e) {
             console.log('No se pudo resolver el link corto:', e.message);
         }
     }
-    // Extrae el aweme_id de la URL
-    // Formatos: /video/1234567890 o /@user/video/1234567890
+
     const match = resolvedUrl.match(/\/video\/(\d+)/);
-    if (!match) throw new Error('No se pudo extraer el ID. Usa el link completo del video desde TikTok.');
+    if (!match) throw new Error('No se pudo extraer el ID. Usa el link completo del video.');
     const awemeId = match[1];
 
     const response = await fetch(
-        `https://${host}/video-without-watermark?compact=0&aweme_id=${awemeId}`,
+        `https://${host}/get-post?region=GB&compact=0&aweme_id=${awemeId}`,
         {
             headers: {
                 'Content-Type': 'application/json',
@@ -77,7 +75,46 @@ async function getTikTok(url, apiKey) {
     );
 
     const data = await response.json();
-    
+    const detail = data.aweme_detail;
+    if (!detail) throw new Error('No se encontró el video');
+
+    const video = detail.video;
+
+    // Construye lista de calidades desde bit_rate, ordenadas de mayor a menor
+    const qualities = (video.bit_rate || [])
+        .map(b => ({
+            label: b.gear_name?.replace(/_/g, ' ') || 'Calidad',
+            url: b.play_addr?.url_list?.[0] || '',
+            sizeBytes: b.play_addr?.data_size || 0,
+            hasWatermark: false
+        }))
+        .filter(q => q.url)
+        .sort((a, b) => b.sizeBytes - a.sizeBytes);
+
+    // Agrega la versión sin marca de agua si existe (suele ser distinta a bit_rate)
+    if (video.download_no_watermark_addr?.url_list?.[0]) {
+        qualities.unshift({
+            label: 'Sin marca de agua (HD)',
+            url: video.download_no_watermark_addr.url_list[0],
+            sizeBytes: video.download_no_watermark_addr.data_size || 0,
+            hasWatermark: false
+        });
+    }
+
+    if (qualities.length === 0) throw new Error('No se encontraron calidades de video');
+
+    return {
+        platform: 'tiktok',
+        title: detail.desc || 'Video de TikTok',
+        thumbnail: video.cover?.url_list?.[0] || video.origin_cover?.url_list?.[0] || null,
+        author: detail.author?.unique_id || detail.author?.nickname || '',
+        downloadUrl: qualities[0].url, // mejor calidad por defecto
+        qualities // array completo para mostrar opciones
+    };
+}
+
+    //LOGS DE RESPUESTA DE TIKTOK
+    const data = await response.json();
     console.log('TikTok ALL keys:', JSON.stringify(Object.keys(data)));
     console.log('TikTok bit_rate:', JSON.stringify(data.bit_rate)?.slice(0, 500));
     console.log('TikTok play_addr:', JSON.stringify(data.play_addr)?.slice(0, 300));
