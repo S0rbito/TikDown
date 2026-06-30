@@ -81,17 +81,27 @@ async function procesarDescarga() {
         const thumb = datos.thumbnail
             ? `<img class="video-thumb" src="${datos.thumbnail}" alt="Miniatura" onerror="this.style.display='none'">`
             : `<div class="video-thumb-placeholder">${icon}</div>`;
-
+        
+        const qualityButtons = (datos.qualities || [{ label: 'Original', url: datos.downloadUrl }])
+            .map((q) => {
+                const sizeText = q.sizeBytes ? ` (${(q.sizeBytes / 1024 / 1024).toFixed(1)} MB)` : '';
+                return `<button onclick="descargarDirecto('${q.url}', '${generateFilename(datos.platform, datos.title)}')" class="download-btn" style="background:${color}">
+                    ⬇ ${q.label}${sizeText}
+                </button>`;
+            }).join('');
+        
         container.innerHTML = `
             <div class="video-card" style="--platform-color: ${color}">
                 <div class="platform-badge" style="background:${color}">${icon} ${datos.platform}</div>
-                ${thumb}
-                <div class="video-info">
-                    <p class="video-title">${truncate(datos.title, 100)}</p>
-                    ${datos.author ? `<p class="video-author">@${datos.author}</p>` : ''}
-                    <a href="${datos.downloadUrl}" target="_blank" download="${generateFilename(datos.platform, datos.title)}" class="download-btn" style="background:${color}">
-                        ⬇ Descargar MP4
-                    </a>
+                <div class="card-body">
+                    ${thumb}
+                    <div class="video-info">
+                        <p class="video-title">${truncate(datos.title, 100)}</p>
+                        ${datos.author ? `<p class="video-author">@${datos.author}</p>` : ''}
+                    </div>
+                </div>
+                <div class="quality-buttons">
+                    ${qualityButtons}
                 </div>
             </div>
         `;
