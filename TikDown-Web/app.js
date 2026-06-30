@@ -189,6 +189,15 @@ function loadFromHistory(index) {
     }
 }
 
+async function pegarLink() {
+    try {
+        const text = await navigator.clipboard.readText();
+        document.getElementById('url-input').value = text;
+    } catch (err) {
+        alert('No se pudo acceder al portapapeles. Pégalo manualmente con Ctrl+V.');
+    }
+}
+
 async function descargarDirecto(videoUrl, filename) {
     try {
         const response = await fetch(videoUrl);

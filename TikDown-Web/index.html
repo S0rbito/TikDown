@@ -64,6 +64,23 @@
             color: var(--text-secondary);
         }
 
+        .full-download-btn {
+            width: 100%;
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 14px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 12px;
+            transition: opacity 0.15s;
+        }
+        .full-download-btn:hover { opacity: 0.85; }
+        .full-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
         /* ── Search box ── */
         .main-container { width: 100%; max-width: 620px; }
 
@@ -355,8 +372,10 @@
 
         <div class="search-box">
             <input type="text" id="url-input" placeholder="Pega el link del video aquí...">
-            <button id="search-btn" onclick="procesarDescarga()">Descargar</button>
+            <button id="paste-btn" onclick="pegarLink()">📋 Pegar</button>
         </div>
+
+        <button id="search-btn" class="full-download-btn" onclick="procesarDescarga()">Descargar</button>
 
         <div id="download-container"></div>
 
