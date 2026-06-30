@@ -189,6 +189,31 @@ function loadFromHistory(index) {
     }
 }
 
+// Permite presionar Enter en el input y funcionalidad de pegar
+document.addEventListener('DOMContentLoaded', () => {
+    const urlInput = document.getElementById('url-input');
+    
+    urlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') procesarDescarga();
+    });
+
+    // Lógica del nuevo botón de pegar
+    const pasteBtn = document.getElementById('paste-btn');
+    if (pasteBtn) {
+        pasteBtn.addEventListener('click', async () => {
+            try {
+                const text = await navigator.clipboard.readText();
+                urlInput.value = text;
+            } catch (err) {
+                console.log('Error al pegar:', err.message);
+                alert('Tu navegador no permite pegar automáticamente. Por favor pégalo manualmente.');
+            }
+        });
+    }
+
+    renderHistory();
+});
+
 async function descargarDirecto(videoUrl, filename) {
     try {
         const response = await fetch(videoUrl);
