@@ -100,9 +100,15 @@ async function getTikTok(url, apiKey) {
     }));
 
 
-
-
-
+        // Agrega la versión sin marca de agua si existe
+    if (video.download_no_watermark_addr?.url_list?.[0]) {
+        qualities.unshift({
+            label: 'Sin marca de agua (HD)',
+            url: video.download_no_watermark_addr.url_list[0],
+            sizeBytes: video.download_no_watermark_addr.data_size || 0,
+            hasWatermark: false
+        });
+    }
     
 
     if (qualities.length === 0) throw new Error('No se encontraron calidades de video');
